@@ -126,7 +126,7 @@ export default function PanelScreen({ navigation, route }) {
         return;
       }
       if (barbero.slug !== slug) {
-        navigation.replace('Panel', { slug: barbero.slug });
+        navigation.setParams({ slug: barbero.slug });
         return;
       }
       setBarberoId(barbero.id);
@@ -203,16 +203,7 @@ export default function PanelScreen({ navigation, route }) {
   }
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView edges={['top']} style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.navigate('BarberProfile', { slug })}>
-          <Text style={styles.back}>← PERFIL</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Editar', { slug })}>
-          <Text style={styles.edit}>EDITAR</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-
+    <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.head}>
           <View style={{ flex: 1 }}>
@@ -313,7 +304,7 @@ export default function PanelScreen({ navigation, route }) {
           })}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -328,16 +319,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   muted: { color: colors.grayLight, fontFamily: fonts.body, padding: 24 },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray,
-  },
-  back: { fontFamily: fonts.bodyBold, fontSize: 12, letterSpacing: 2, color: colors.grayLight },
-  edit: { fontFamily: fonts.display, fontSize: 13, letterSpacing: 2, color: colors.acid },
   scroll: { padding: 20, paddingBottom: 48 },
   head: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 12 },
   dayTitle: { fontFamily: fonts.display, fontSize: 26, color: colors.white, letterSpacing: 1 },

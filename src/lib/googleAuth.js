@@ -72,14 +72,17 @@ export async function signInWithGoogle() {
   if (error) throw error;
   if (!data?.url) throw new Error('No OAuth URL');
 
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  const result = await WebBrowser.openAuthSessionAsync(data.url, 'barberit://auth/callback');
 
   if (result.type !== 'success' || !result.url) {
     return { cancelled: true };
   }
 
   const ok = await finalizeOAuthFromUrl(result.url);
-  if (ok) return { cancelled: false };
+  if (ok) {
+    const { data } = await supabase.auth.getSession();
+    return { cancelled: false, session: data?.session ?? null };
+  }
 
   throw new Error(
     'No se pudo leer la sesión. Añade en Supabase Redirect URLs la URL HTTPS de callback (ver EXPO_PUBLIC_SITE_URL + /auth/mobile-callback) y exp://** / barberit://** si usas deep links.'

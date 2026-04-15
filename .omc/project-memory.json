@@ -1,0 +1,232 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776212885900,
+  "projectRoot": "/Users/bryanriano/Desktop/barberit-mobile",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "19.1.0",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": "npm run start",
+    "scripts": {
+      "start": "expo start",
+      "android": "expo start --android",
+      "ios": "expo start --ios",
+      "web": "expo start --web"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "assets",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 4,
+      "lastAccessed": 1776212885811,
+      "keyFiles": [
+        "adaptive-icon.png",
+        "favicon.png",
+        "icon.png",
+        "splash-icon.png"
+      ]
+    },
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 1,
+      "lastAccessed": 1776212885811,
+      "keyFiles": [
+        "metadata.json"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 1,
+      "lastAccessed": 1776212885811,
+      "keyFiles": [
+        "theme.js"
+      ]
+    },
+    "dist/assets": {
+      "path": "dist/assets",
+      "purpose": "Static assets",
+      "fileCount": 35,
+      "lastAccessed": 1776212885813,
+      "keyFiles": [
+        "0747a1317bbe9c6fc340b889ef8ab3ae",
+        "0a328cd9c1afd0afe8e3b1ec5165b1b4",
+        "0abc11955dc269acff39ccd5921d6daa"
+      ]
+    },
+    "src/api": {
+      "path": "src/api",
+      "purpose": "API routes",
+      "fileCount": 1,
+      "lastAccessed": 1776212885831,
+      "keyFiles": [
+        "notify.js"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1776212885832,
+      "keyFiles": []
+    },
+    "src/lib": {
+      "path": "src/lib",
+      "purpose": "Library code",
+      "fileCount": 3,
+      "lastAccessed": 1776212885834,
+      "keyFiles": [
+        "googleAuth.js",
+        "oauthRedirect.js",
+        "supabase.js"
+      ]
+    },
+    "src/utils": {
+      "path": "src/utils",
+      "purpose": "Utility functions",
+      "fileCount": 1,
+      "lastAccessed": 1776212885834,
+      "keyFiles": [
+        "booking.js"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/screens/HomeScreen.js",
+      "accessCount": 11,
+      "lastAccessed": 1776214885587,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/LoginScreen.js",
+      "accessCount": 10,
+      "lastAccessed": 1776214481700,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/googleAuth.js",
+      "accessCount": 8,
+      "lastAccessed": 1776214474678,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/HistorialScreen.js",
+      "accessCount": 3,
+      "lastAccessed": 1776218288193,
+      "type": "file"
+    },
+    {
+      "path": "src/theme.js",
+      "accessCount": 2,
+      "lastAccessed": 1776212953745,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/RegistroScreen.js",
+      "accessCount": 2,
+      "lastAccessed": 1776213086171,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/BarberosScreen.js",
+      "accessCount": 2,
+      "lastAccessed": 1776213116638,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/BarberProfileScreen.js",
+      "accessCount": 2,
+      "lastAccessed": 1776213237768,
+      "type": "file"
+    },
+    {
+      "path": "src/screens",
+      "accessCount": 2,
+      "lastAccessed": 1776213244795,
+      "type": "directory"
+    },
+    {
+      "path": "src/screens/PanelScreen.js",
+      "accessCount": 1,
+      "lastAccessed": 1776212932185,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/EditarScreen.js",
+      "accessCount": 1,
+      "lastAccessed": 1776212932561,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/CompletarPerfilScreen.js",
+      "accessCount": 1,
+      "lastAccessed": 1776212933135,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/oauthRedirect.js",
+      "accessCount": 1,
+      "lastAccessed": 1776213708111,
+      "type": "file"
+    },
+    {
+      "path": "src/navigation/AppNavigator.js",
+      "accessCount": 1,
+      "lastAccessed": 1776213861972,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/supabase.js",
+      "accessCount": 1,
+      "lastAccessed": 1776214768603,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 1,
+      "lastAccessed": 1776218277033,
+      "type": "directory"
+    }
+  ],
+  "userDirectives": []
+}

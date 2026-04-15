@@ -15,8 +15,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { Video, ResizeMode } from 'expo-av';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { colors, fonts } from '../theme';
+import { SERVICE_ICON_OPTIONS, ServiceIonicon, resolveServiceIonicon } from '../utils/serviceIcons';
 
-const ICONOS = ['✦', '◈', '◉', '✂', '◆', '●', '★', '▲'];
+function normalizeServicioIcon(s) {
+  return { ...s, icono: resolveServiceIonicon(s.icono) };
+}
 
 function Section({ n, label }) {
   return (
@@ -67,7 +70,7 @@ export default function EditarScreen({ navigation, route }) {
         return;
       }
       if (barbero.slug !== slug) {
-        navigation.replace('Editar', { slug: barbero.slug });
+        navigation.setParams({ slug: barbero.slug });
         return;
       }
 
@@ -85,12 +88,12 @@ export default function EditarScreen({ navigation, route }) {
         .eq('activo', true);
 
       if (svcs?.length) {
-        setServicios(svcs);
+        setServicios(svcs.map(normalizeServicioIcon));
       } else {
         setServicios([
-          { nombre: 'CORTE CLÁSICO', precio: 40000, duracion_min: 45, icono: '✦', activo: true, isNew: true },
-          { nombre: 'BARBA', precio: 30000, duracion_min: 30, icono: '◈', activo: true, isNew: true },
-          { nombre: 'COMBO FULL', precio: 65000, duracion_min: 75, icono: '◉', activo: true, isNew: true },
+          { nombre: 'CORTE CLÁSICO', precio: 40000, duracion_min: 45, icono: 'cut-outline', activo: true, isNew: true },
+          { nombre: 'BARBA', precio: 30000, duracion_min: 30, icono: 'brush-outline', activo: true, isNew: true },
+          { nombre: 'COMBO FULL', precio: 65000, duracion_min: 75, icono: 'layers-outline', activo: true, isNew: true },
         ]);
       }
 
@@ -186,7 +189,7 @@ export default function EditarScreen({ navigation, route }) {
         nombre: 'NUEVO SERVICIO',
         precio: 30000,
         duracion_min: 30,
-        icono: '✦',
+        icono: 'cut-outline',
         activo: true,
         isNew: true,
       },
@@ -246,7 +249,7 @@ export default function EditarScreen({ navigation, route }) {
       .select('*')
       .eq('barbero_id', barberoId)
       .eq('activo', true);
-    if (svcsReload?.length) setServicios(svcsReload);
+    if (svcsReload?.length) setServicios(svcsReload.map(normalizeServicioIcon));
 
     setSaving(false);
     setSaved(true);
@@ -274,16 +277,24 @@ export default function EditarScreen({ navigation, route }) {
   return (
     <View style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.sticky}>
-        <TouchableOpacity onPress={() => navigation.navigate('BarberProfile', { slug })}>
-          <Text style={styles.back}>← PERFIL</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.save, saving && { opacity: 0.7 }]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          <Text style={styles.saveTxt}>{saving ? 'GUARDANDO...' : saved ? 'GUARDADO ✓' : 'GUARDAR'}</Text>
-        </TouchableOpacity>
+        <View style={styles.stickyActions}>
+          <TouchableOpacity
+            style={[styles.previewBtn, !slug && styles.previewBtnOff]}
+            onPress={() => slug && navigation.navigate('BarberProfile', { slug, previewFromEdit: true })}
+            disabled={!slug}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.previewTxt}>VISTA PREVIA</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.save, saving && { opacity: 0.7 }]}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.88}
+          >
+            <Text style={styles.saveTxt}>{saving ? 'GUARDANDO...' : saved ? 'GUARDADO ✓' : 'GUARDAR'}</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -333,18 +344,26 @@ export default function EditarScreen({ navigation, route }) {
           <View key={idx} style={styles.svcCard}>
             <View style={styles.svcRow}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.iconPick}>
-                {ICONOS.map((ic) => (
-                  <TouchableOpacity
-                    key={ic}
-                    style={[
-                      styles.iconChip,
-                      svc.icono === ic && { borderColor: colors.acid, backgroundColor: colors.black },
-                    ]}
-                    onPress={() => updateServicio(idx, 'icono', ic)}
-                  >
-                    <Text style={styles.iconTxt}>{ic}</Text>
-                  </TouchableOpacity>
-                ))}
+                {SERVICE_ICON_OPTIONS.map(({ value, hint }) => {
+                  const selected = svc.icono === value;
+                  return (
+                    <TouchableOpacity
+                      key={value}
+                      style={[
+                        styles.iconChip,
+                        selected && { borderColor: colors.acid, backgroundColor: colors.black },
+                      ]}
+                      onPress={() => updateServicio(idx, 'icono', value)}
+                      accessibilityLabel={hint}
+                    >
+                      <ServiceIonicon
+                        name={value}
+                        size={22}
+                        color={selected ? colors.acid : colors.grayLight}
+                      />
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
             </View>
             <TextInput
@@ -444,17 +463,33 @@ const styles = StyleSheet.create({
   errTitle: { fontFamily: fonts.display, fontSize: 36, color: colors.white, marginBottom: 8 },
   muted: { fontFamily: fonts.body, color: colors.grayLight },
   sticky: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray,
     backgroundColor: 'rgba(8,8,8,0.97)',
   },
-  back: { fontFamily: fonts.bodyBold, fontSize: 12, letterSpacing: 2, color: colors.grayLight },
-  save: { backgroundColor: colors.acid, paddingHorizontal: 16, paddingVertical: 8 },
+  stickyActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  previewBtn: {
+    borderWidth: 1,
+    borderColor: colors.acid,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 4,
+  },
+  previewBtnOff: { opacity: 0.4, borderColor: colors.gray },
+  previewTxt: {
+    fontFamily: fonts.display,
+    fontSize: 13,
+    color: colors.acid,
+    letterSpacing: 2,
+  },
+  save: { backgroundColor: colors.acid, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 4 },
   saveTxt: { fontFamily: fonts.display, fontSize: 14, color: colors.black, letterSpacing: 2 },
   scroll: { padding: 20, paddingBottom: 48, maxWidth: 720, alignSelf: 'center', width: '100%' },
   banner: {
@@ -535,7 +570,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 8,
   },
-  iconTxt: { fontSize: 18, color: colors.acid },
   svcNombre: {
     borderWidth: 1,
     borderColor: colors.gray,

@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { colors, fonts } from '../theme';
+import { RESET_MAIN_AGENDA, resetToBarberMainTabs } from '../navigation/resetMainTabs';
 
 export default function CompletarPerfilScreen({ navigation, route }) {
   const suggestedNombre = route.params?.suggestedNombre ?? '';
@@ -67,14 +68,14 @@ export default function CompletarPerfilScreen({ navigation, route }) {
         setLoading(false);
         return;
       }
-      navigation.reset({ index: 0, routes: [{ name: 'Panel', params: { slug: slugFinal } }] });
+      navigation.reset(resetToBarberMainTabs(slugFinal));
     } else if (redirect?.screen) {
       navigation.reset({
         index: 0,
         routes: [{ name: redirect.screen, params: redirect.params ?? {} }],
       });
     } else {
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      navigation.reset(RESET_MAIN_AGENDA);
     }
     setLoading(false);
   }

@@ -1,7 +1,7 @@
 export const DEFAULT_SERVICES = [
-  { id: 'corte', label: 'CORTE CLÁSICO', price: 40000, duration: '45 min', icon: '✦' },
-  { id: 'barba', label: 'BARBA', price: 30000, duration: '30 min', icon: '◈' },
-  { id: 'combo', label: 'COMBO FULL', price: 65000, duration: '75 min', icon: '◉' },
+  { id: 'corte', label: 'CORTE CLÁSICO', price: 40000, duration: '45 min', icon: 'cut-outline' },
+  { id: 'barba', label: 'BARBA', price: 30000, duration: '30 min', icon: 'brush-outline' },
+  { id: 'combo', label: 'COMBO FULL', price: 65000, duration: '75 min', icon: 'layers-outline' },
 ];
 
 export const TIMES_MORNING = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'];
@@ -17,11 +17,65 @@ export const TIMES_AFTERNOON = [
 ];
 export const TIMES_EVENING = ['17:00', '17:30', '18:00', '18:30', '19:00'];
 
+const BOGOTA_TZ = 'America/Bogota';
+
+/** Calendar Y-M-D in a given IANA zone (avoids `new Date(localeString)` which breaks on Hermes/RN). */
+function getYmdInTimeZone(date, timeZone) {
+  try {
+    const f = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const parts = f.formatToParts(date);
+    const year = Number(parts.find((p) => p.type === 'year')?.value);
+    const month = Number(parts.find((p) => p.type === 'month')?.value);
+    const day = Number(parts.find((p) => p.type === 'day')?.value);
+    if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+      return { year, month, day };
+    }
+  } catch (_) {
+    /* fall through */
+  }
+  return null;
+}
+
+/**
+ * “Today” in Bogotá as a local Date at noon (used only for calendar day + weekday).
+ */
 export function getTodayBogota() {
   const now = new Date();
-  const bogota = new Date(now.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
-  bogota.setHours(12, 0, 0, 0);
-  return bogota;
+  const ymd = getYmdInTimeZone(now, BOGOTA_TZ);
+  if (ymd) {
+    return new Date(ymd.year, ymd.month - 1, ymd.day, 12, 0, 0, 0);
+  }
+  const l = new Date(now);
+  return new Date(l.getFullYear(), l.getMonth(), l.getDate(), 12, 0, 0, 0);
+}
+
+/**
+ * Current clock (hour/minute) in Bogotá for slot filtering.
+ */
+export function getBogotaClock(date = new Date()) {
+  try {
+    const f = new Intl.DateTimeFormat('en-GB', {
+      timeZone: BOGOTA_TZ,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    });
+    const parts = f.formatToParts(date);
+    const hour = Number(parts.find((p) => p.type === 'hour')?.value);
+    const minute = Number(parts.find((p) => p.type === 'minute')?.value);
+    if (Number.isFinite(hour) && Number.isFinite(minute)) {
+      return { hour, minute };
+    }
+  } catch (_) {
+    /* fall through */
+  }
+  const l = new Date(date);
+  return { hour: l.getHours(), minute: l.getMinutes() };
 }
 
 export function getDays() {
