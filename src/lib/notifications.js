@@ -1,88 +1,125 @@
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import { Platform } from 'react-native';
-import { supabase } from './supabase';
-
-/** Android `res/raw` + channel `sound` (Expo push `sound` is iOS-only). */
-export const RESERVAS_NOTIFICATION_SOUND_ANDROID = 'barber_buzz.wav';
-/** iOS bundle + Expo Push `sound` → APNs `aps.alert.sound`. */
-export const RESERVAS_NOTIFICATION_SOUND_IOS = 'barber_buzz.caf';
-/** New channel id so Android picks up custom sound (channels are immutable after first create). */
-export const RESERVAS_NOTIFICATION_CHANNEL_ID = 'reservas_barber';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
-
 /**
- * Requests permission and saves the Expo push token to the current user's profile.
- * Call this once after the user logs in.
+ * NOTIFICACIONES — BarberIT
+ *
+ * Notificaciones locales (schedule): útiles para avisos in-app.
+ *
+ * Expo Go + Android (SDK 53+): el módulo nativo de push remoto fue retirado;
+ * evitamos cargar `expo-notifications` ahí para no inundar la consola con ERROR.
+ * Para probar notificaciones reales en Android: development build (`expo-dev-client`
+ * + `npx expo run:android` o EAS Build).
+ *
+ * iOS en Expo Go: limitaciones menores; en producción usar build nativo.
  */
-export async function registerPushToken() {
-  if (!Device.isDevice) return null;
 
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  let finalStatus = existing;
-  if (existing !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-  if (finalStatus !== 'granted') return null;
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from 'react-native';
 
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(RESERVAS_NOTIFICATION_CHANNEL_ID, {
-      name: 'Reservas',
-      importance: Notifications.AndroidImportance.MAX,
-      sound: RESERVAS_NOTIFICATION_SOUND_ANDROID,
-    });
-  }
+const isExpoGoAndroid =
+  Platform.OS === 'android' &&
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
-  const { data: token } = await Notifications.getExpoPushTokenAsync({
-    projectId: '05af54d2-14ca-4996-b715-4543396d9683',
+const Notifications = isExpoGoAndroid ? null : require('expo-notifications');
+
+if (Notifications) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
   });
-
-  if (token) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase
-        .from('profiles')
-        .update({ push_token: token })
-        .eq('id', user.id);
-    }
-  }
-
-  return token;
 }
 
 /**
- * Sends a push notification via Expo's Push API to the given token.
+ * Solicitar permisos. Retorna true si fueron otorgados.
  */
-export async function sendPushNotification({ to, title, body, data = {} }) {
-  if (!to) return;
+export async function requestNotificationPermissions() {
+  if (Platform.OS === 'web' || !Notifications) return false;
+
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  if (existing === 'granted') return true;
+
+  const { status } = await Notifications.requestPermissionsAsync();
+  return status === 'granted';
+}
+
+/**
+ * Canal Android (Android 8+). Sin efecto fuera de Android o sin módulo.
+ */
+export async function setupNotificationChannel() {
+  if (Platform.OS !== 'android' || !Notifications) return;
+  await Notifications.setNotificationChannelAsync('barberit-reservas', {
+    name: 'Reservas',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#CDFF00',
+    sound: true,
+  });
+}
+
+/**
+ * Notificación local inmediata.
+ */
+export async function sendLocalNotification(title, body, data = {}) {
+  if (!Notifications) return null;
   try {
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Accept-Encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        to,
+    const granted = await requestNotificationPermissions();
+    if (!granted) return null;
+
+    return await Notifications.scheduleNotificationAsync({
+      content: {
         title,
         body,
         data,
-        sound: RESERVAS_NOTIFICATION_SOUND_IOS,
-        channelId: RESERVAS_NOTIFICATION_CHANNEL_ID,
-        priority: 'high',
-      }),
+        sound: true,
+        ...(Platform.OS === 'android' && { channelId: 'barberit-reservas' }),
+      },
+      trigger: null,
     });
   } catch (e) {
-    console.warn('[push]', e);
+    console.warn('[Notifications] Error al enviar notificación local:', e.message);
+    return null;
   }
+}
+
+export function notifCancelacionAlCliente(nombreBarberia) {
+  return sendLocalNotification(
+    '❌ Reserva cancelada',
+    `${nombreBarberia} canceló tu cita. Abrí la app para más detalles.`,
+    { tipo: 'cancelacion' }
+  );
+}
+
+export function notifAplazamientoAlCliente(nombreBarberia, nuevaFecha, nuevaHora) {
+  return sendLocalNotification(
+    '📅 Propuesta de cambio de fecha',
+    `${nombreBarberia} propone mover tu cita al ${nuevaFecha} a las ${nuevaHora}.`,
+    { tipo: 'aplazamiento' }
+  );
+}
+
+export function notifRespuestaAlBarbero(nombreCliente, acepto) {
+  return sendLocalNotification(
+    acepto ? '✅ Aplazamiento aceptado' : '❌ Aplazamiento rechazado',
+    acepto
+      ? `${nombreCliente} aceptó el cambio de fecha.`
+      : `${nombreCliente} rechazó el cambio de fecha propuesto.`,
+    { tipo: 'respuesta_aplazamiento', acepto }
+  );
+}
+
+export function notifCancelacionAlBarbero(nombreCliente, fecha) {
+  return sendLocalNotification(
+    '❌ Cita cancelada por el cliente',
+    `${nombreCliente} canceló su cita del ${fecha}.`,
+    { tipo: 'cancelacion_cliente' }
+  );
+}
+
+export function notifCambioAlBarbero(nombreCliente, nuevaFecha, nuevaHora) {
+  return sendLocalNotification(
+    '📅 Cliente reprogramó su cita',
+    `${nombreCliente} cambió su cita al ${nuevaFecha} a las ${nuevaHora}.`,
+    { tipo: 'cambio_cliente' }
+  );
 }

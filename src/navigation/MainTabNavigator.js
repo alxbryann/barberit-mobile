@@ -5,11 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import BarberosScreen from '../screens/BarberosScreen';
-import HistorialScreen from '../screens/HistorialScreen';
+import AgendaScreen from '../screens/AgendaScreen';
+import LoyaltyCardScreen from '../screens/LoyaltyCardScreen';
 import PanelScreen from '../screens/PanelScreen';
 import EditarScreen from '../screens/EditarScreen';
 import AdminBarberiaScreen from '../screens/AdminBarberiaScreen';
 import EmpleadoBarberiaScreen from '../screens/EmpleadoBarberiaScreen';
+import SolicitudPopup from '../components/SolicitudPopup';
+import { notifRespuestaAlBarbero } from '../lib/notifications';
 import { colors, fonts } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -22,11 +25,23 @@ function useBarberSlug() {
 
 const CLIENT_ICONS = {
   Catalogo: { focused: 'people', outline: 'people-outline' },
-  Historial: { focused: 'time', outline: 'time-outline' },
+  Agenda: { focused: 'time', outline: 'time-outline' },
+  Fidelizacion: { focused: 'ribbon', outline: 'ribbon-outline' },
   CerrarSesion: { focused: 'log-out-outline', outline: 'log-out-outline' },
 };
 
 const BARBER_ICONS = {
+  MiAgenda: { focused: 'calendar', outline: 'calendar-outline' },
+  MiPerfil: { focused: 'person', outline: 'person-outline' },
+  CerrarSesion: { focused: 'log-out-outline', outline: 'log-out-outline' },
+};
+
+const ADMIN_ICONS = {
+  MiPanel: { focused: 'grid', outline: 'grid-outline' },
+  CerrarSesion: { focused: 'log-out-outline', outline: 'log-out-outline' },
+};
+
+const EMPLEADO_ICONS = {
   MiAgenda: { focused: 'calendar', outline: 'calendar-outline' },
   MiPerfil: { focused: 'person', outline: 'person-outline' },
   CerrarSesion: { focused: 'log-out-outline', outline: 'log-out-outline' },
@@ -44,13 +59,30 @@ function BarberEditarTab(props) {
   return <EditarScreen {...props} route={{ ...props.route, params: { ...props.route.params, slug } }} />;
 }
 
-function BarberLogoutStub() {
-  return <View style={styles.stub} />;
-}
+function BarberLogoutStub() { return <View style={styles.stub} />; }
+function ClientLogoutStub() { return <View style={styles.stub} />; }
+function AdminLogoutStub() { return <View style={styles.stub} />; }
+function EmpleadoLogoutStub() { return <View style={styles.stub} />; }
 
-function ClientLogoutStub() {
-  return <View style={styles.stub} />;
-}
+const tabScreenOptions = (colors, fonts) => ({ route }) => ({
+  headerShown: false,
+  tabBarStyle: {
+    backgroundColor: colors.black,
+    borderTopColor: colors.cardBorder,
+    borderTopWidth: 1,
+    paddingTop: 8,
+    paddingBottom: 0,
+  },
+  tabBarActiveTintColor: colors.acid,
+  tabBarInactiveTintColor: colors.grayLight,
+  tabBarLabelStyle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 9,
+    letterSpacing: 1.2,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+});
 
 function ClientTabs({ bottomPad }) {
   async function onLogoutPress() {
@@ -61,22 +93,13 @@ function ClientTabs({ bottomPad }) {
     <Tab.Navigator
       initialRouteName="Catalogo"
       screenOptions={({ route }) => ({
-        headerShown: false,
+        ...tabScreenOptions(colors, fonts)({ route }),
         tabBarStyle: {
           backgroundColor: colors.black,
           borderTopColor: colors.cardBorder,
           borderTopWidth: 1,
           paddingTop: 8,
           paddingBottom: bottomPad,
-        },
-        tabBarActiveTintColor: colors.acid,
-        tabBarInactiveTintColor: colors.grayLight,
-        tabBarLabelStyle: {
-          fontFamily: fonts.bodyBold,
-          fontSize: 9,
-          letterSpacing: 1.2,
-          marginBottom: 4,
-          textTransform: 'uppercase',
         },
         tabBarIcon: ({ color, focused }) => {
           if (route.name === 'CerrarSesion') {
@@ -88,25 +111,14 @@ function ClientTabs({ bottomPad }) {
         },
       })}
     >
-      <Tab.Screen
-        name="Catalogo"
-        component={BarberosScreen}
-        options={{ tabBarLabel: 'Catálogo' }}
-      />
-      <Tab.Screen name="Historial" component={HistorialScreen} options={{ tabBarLabel: 'Historial' }} />
+      <Tab.Screen name="Catalogo" component={BarberosScreen} options={{ tabBarLabel: 'Catálogo' }} />
+      <Tab.Screen name="Agenda" component={AgendaScreen} options={{ tabBarLabel: 'Agenda' }} />
+      <Tab.Screen name="Fidelizacion" component={LoyaltyCardScreen} options={{ tabBarLabel: 'Sellos' }} />
       <Tab.Screen
         name="CerrarSesion"
         component={ClientLogoutStub}
-        options={{
-          tabBarLabel: 'Cerrar sesión',
-          tabBarActiveTintColor: colors.grayLight,
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            onLogoutPress();
-          },
-        }}
+        options={{ tabBarLabel: 'Cerrar sesión', tabBarActiveTintColor: colors.grayLight }}
+        listeners={{ tabPress: (e) => { e.preventDefault(); onLogoutPress(); } }}
       />
     </Tab.Navigator>
   );
@@ -154,41 +166,12 @@ function BarberTabs({ bottomPad, slug }) {
         <Tab.Screen
           name="CerrarSesion"
           component={BarberLogoutStub}
-          options={{
-            tabBarLabel: 'Cerrar sesión',
-            tabBarActiveTintColor: colors.grayLight,
-          }}
-          listeners={{
-            tabPress: (e) => {
-              e.preventDefault();
-              onLogoutPress();
-            },
-          }}
+          options={{ tabBarLabel: 'Cerrar sesión', tabBarActiveTintColor: colors.grayLight }}
+          listeners={{ tabPress: (e) => { e.preventDefault(); onLogoutPress(); } }}
         />
       </Tab.Navigator>
     </BarberSlugContext.Provider>
   );
-}
-
-const ADMIN_ICONS = {
-  MiPanel: { focused: 'grid', outline: 'grid-outline' },
-  Barberos: { focused: 'people', outline: 'people-outline' },
-  Ajustes: { focused: 'settings', outline: 'settings-outline' },
-  CerrarSesion: { focused: 'log-out-outline', outline: 'log-out-outline' },
-};
-
-const EMPLEADO_ICONS = {
-  MiAgenda: { focused: 'calendar', outline: 'calendar-outline' },
-  MiPerfil: { focused: 'person', outline: 'person-outline' },
-  CerrarSesion: { focused: 'log-out-outline', outline: 'log-out-outline' },
-};
-
-function AdminLogoutStub() {
-  return <View style={styles.stub} />;
-}
-
-function EmpleadoLogoutStub() {
-  return <View style={styles.stub} />;
 }
 
 function AdminBarberTabs({ bottomPad }) {
@@ -288,7 +271,7 @@ function EmpleadoTabs({ bottomPad, slug }) {
   );
 }
 
-export default function MainTabNavigator() {
+export default function MainTabNavigator({ navigation }) {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 10);
   const [ready, setReady] = useState(false);
@@ -296,6 +279,9 @@ export default function MainTabNavigator() {
   const [barberSlug, setBarberSlug] = useState(null);
   const [empleadoSlug, setEmpleadoSlug] = useState(null);
   const [role, setRole] = useState(null);
+
+  const [clientSolicitudQueue, setClientSolicitudQueue] = useState([]);
+  const clientSolicitudActual = clientSolicitudQueue[0] ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -327,6 +313,7 @@ export default function MainTabNavigator() {
         .select('role')
         .eq('id', session.user.id)
         .maybeSingle();
+
       if (profile?.role === 'barbero') {
         const { data: b } = await supabase
           .from('barberos')
@@ -344,6 +331,7 @@ export default function MainTabNavigator() {
           return;
         }
       }
+
       if (profile?.role === 'barbero_empleado') {
         const { data: bEmp } = await supabase
           .from('barberos')
@@ -359,7 +347,18 @@ export default function MainTabNavigator() {
         }
         return;
       }
+
+      // Cliente: cargar solicitudes no leídas
       if (!cancelled) {
+        const { data: sols } = await supabase
+          .from('reserva_solicitudes')
+          .select('*')
+          .eq('cliente_id', session.user.id)
+          .eq('leido_cliente', false)
+          .order('created_at', { ascending: true });
+        if (!cancelled && sols?.length) {
+          setClientSolicitudQueue(sols);
+        }
         setIsBarber(false);
         setBarberSlug(null);
         setEmpleadoSlug(null);
@@ -369,14 +368,49 @@ export default function MainTabNavigator() {
     }
 
     resolve();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      resolve();
-    });
+    const { data: sub } = supabase.auth.onAuthStateChange(() => { resolve(); });
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  async function handleClientSolicitudClose() {
+    if (!clientSolicitudActual) return;
+    const s = clientSolicitudActual;
+    if (s.tipo === 'cancelacion' || s.estado !== 'pendiente') {
+      await supabase
+        .from('reserva_solicitudes')
+        .update({ leido_cliente: true })
+        .eq('id', s.id);
+    }
+    setClientSolicitudQueue((prev) => prev.slice(1));
+  }
+
+  async function handleClientAceptar(solicitudId) {
+    const { data, error } = await supabase.rpc('responder_aplazamiento', {
+      p_solicitud_id: solicitudId,
+      p_acepta: true,
+    });
+    if (error || !data?.ok) return;
+    await notifRespuestaAlBarbero('El cliente', true);
+  }
+
+  async function handleClientRechazar(solicitudId) {
+    const { data, error } = await supabase.rpc('responder_aplazamiento', {
+      p_solicitud_id: solicitudId,
+      p_acepta: false,
+    });
+    if (error || !data?.ok) return;
+    await notifRespuestaAlBarbero('El cliente', false);
+  }
+
+  function handleClientNuevaReserva(barberoSlug) {
+    setClientSolicitudQueue((prev) => prev.slice(1));
+    if (barberoSlug && navigation) {
+      navigation.navigate('BarberProfile', { slug: barberoSlug });
+    }
+  }
 
   if (!ready) {
     return (
@@ -386,19 +420,30 @@ export default function MainTabNavigator() {
     );
   }
 
-  if (isBarber && barberSlug) {
-    return <BarberTabs bottomPad={bottomPad} slug={barberSlug} />;
-  }
+  return (
+    <>
+      {isBarber && barberSlug ? (
+        <BarberTabs bottomPad={bottomPad} slug={barberSlug} />
+      ) : role === 'admin_barberia' ? (
+        <AdminBarberTabs bottomPad={bottomPad} />
+      ) : role === 'barbero_empleado' ? (
+        <EmpleadoTabs bottomPad={bottomPad} slug={empleadoSlug} />
+      ) : (
+        <ClientTabs bottomPad={bottomPad} />
+      )}
 
-  if (role === 'admin_barberia') {
-    return <AdminBarberTabs bottomPad={bottomPad} />;
-  }
-
-  if (role === 'barbero_empleado') {
-    return <EmpleadoTabs bottomPad={bottomPad} slug={empleadoSlug} />;
-  }
-
-  return <ClientTabs bottomPad={bottomPad} />;
+      {!isBarber && clientSolicitudActual && (
+        <SolicitudPopup
+          solicitud={clientSolicitudActual}
+          role="cliente"
+          onClose={handleClientSolicitudClose}
+          onAceptar={handleClientAceptar}
+          onRechazar={handleClientRechazar}
+          onNuevaReserva={handleClientNuevaReserva}
+        />
+      )}
+    </>
+  );
 }
 
 const styles = StyleSheet.create({

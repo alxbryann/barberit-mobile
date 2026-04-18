@@ -15,8 +15,18 @@ import { finalizeOAuthFromUrl } from './src/lib/googleAuth';
 import { registerPushToken } from './src/lib/notifications';
 import { supabase } from './src/lib/supabase';
 import { colors } from './src/theme';
+import {
+  setupNotificationChannel,
+  requestNotificationPermissions,
+} from './src/lib/notifications';
 
 export default function App() {
+  // Inicializar canal de notificaciones al arrancar la app
+  useEffect(() => {
+    setupNotificationChannel().catch(() => {});
+    requestNotificationPermissions().catch(() => {});
+  }, []);
+
   useEffect(() => {
     // Register push token when user is already logged in on app open
     supabase.auth.getSession().then(({ data: { session } }) => {

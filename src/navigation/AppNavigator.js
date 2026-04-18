@@ -18,6 +18,7 @@ import CrearBarberiaScreen from '../screens/CrearBarberiaScreen';
 import AdminBarberiaScreen from '../screens/AdminBarberiaScreen';
 import UnirseBarberiaScreen from '../screens/UnirseBarberiaScreen';
 import EmpleadoBarberiaScreen from '../screens/EmpleadoBarberiaScreen';
+import LoyaltyConfigScreen from '../screens/LoyaltyConfigScreen';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { colors } from '../theme';
 
@@ -128,6 +129,7 @@ export default function AppNavigator() {
         <Stack.Screen name="AdminBarberia" component={AdminBarberiaScreen} />
         <Stack.Screen name="UnirseBarberia" component={UnirseBarberiaScreen} />
         <Stack.Screen name="EmpleadoBarberia" component={EmpleadoBarberiaScreen} />
+        <Stack.Screen name="LoyaltyConfig" component={LoyaltyConfigScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
